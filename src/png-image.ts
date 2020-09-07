@@ -1,4 +1,5 @@
 import PngChunk from "./png-chunk";
+import pako from "pako";
 
 export default class PngImage {
     public content: Array<Uint8Array> = [];
@@ -65,5 +66,24 @@ export default class PngImage {
     }
 
     private parseIDATData() {
+        const data = pako.inflate(this.idatData);
+
+        let pos = 0;
+        const scanlineLength: number = this.width * 4 + 1; // 4 bytes per pixel + 1 for the filter
+
+        while (pos < data.length) {
+            const line = data.slice(pos, pos + scanlineLength);
+            const filter = line[0];
+            const pixelsData = [];
+
+            let linePos = 1;
+            while (linePos < line.length) {
+                pixelsData.push(line.slice(linePos, linePos + 4));
+                linePos += 4;
+            }
+
+            // We will process the line data here
+            pos += scanlineLength;
+        }
     }
 }
