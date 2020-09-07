@@ -95,6 +95,18 @@ export default class PngImage {
                         scanlineLength,
                     }));
                     break;
+                case 3:
+                    this.content = this.content.concat(this.parseAverageFilter(pixelsData, {
+                        pos,
+                        scanlineLength,
+                    }));
+                    break;
+                case 4:
+                    this.content = this.content.concat(this.parsePaethFilter(pixelsData, {
+                        pos,
+                        scanlineLength,
+                    }));
+                    break;
                 default:
                     pixelsData.map(() => {
                         this.content.push(new Uint8Array([0, 0, 0, 255]));
@@ -135,6 +147,52 @@ export default class PngImage {
                 (pixel[3] + previousArray[3]) % 256,
             ]);
             content.push(newArray);
+        });
+        return content;
+    }
+
+    private parseAverageFilter(pixelsData: Array<Uint8Array>, metadata: any): Array<Uint8Array> {
+        const content: Array<Uint8Array> = [];
+        const previousLinePixels = this.content.slice((metadata.pos / metadata.scanlineLength - 1) * this.width,  (metadata.pos / metadata.scanlineLength - 1) * this.width + this.width);
+        let previousPixel: any = [0, 0, 0, 0];
+
+        pixelsData.map((pixel: any, i: number) => {
+            let left = previousPixel;
+            let up = previousLinePixels[i];
+            let newArray: Uint8Array = new Uint8Array([
+                (pixel[0] + Math.floor((left[0] + up[0]) / 2)) % 256,
+                (pixel[1] + Math.floor((left[1] + up[1]) / 2)) % 256,
+                (pixel[2] + Math.floor((left[2] + up[2]) / 2)) % 256,
+                (pixel[3] + Math.floor((left[3] + up[3]) / 2)) % 256,
+            ]);
+            previousPixel = newArray;
+            content.push(previousPixel);
+        });
+        return  content;
+    }
+
+    private parsePaethFilter(pixelsData: Array<Uint8Array>, metadata: any): Array<Uint8Array> {
+        const content: Array<Uint8Array> = [];
+        const previousLinePixels = this.content.slice((metadata.pos / metadata.scanlineLength - 1) * this.width,  (metadata.pos / metadata.scanlineLength - 1) * this.width + this.width);
+        let previousPixel: any = [0, 0, 0, 0];
+
+        pixelsData.map((pixel: any, i: number) => {
+            let left = previousPixel;
+            let up = previousLinePixels[i];
+            let upperleft = i ? previousLinePixels[i - 1] : [0, 0, 0, 0];
+
+            let bytes = pixel.map((byte: any, byte_index: number) => {
+                const p = left[byte_index] + up[byte_index] - upperleft[byte_index];
+                const pa = Math.abs(p - left[byte_index]);
+                const pb = Math.abs(p - up[byte_index]);
+                const pc = Math.abs(p - upperleft[byte_index]);
+
+                if (pa <= pb && pa <= pc) return (byte + left[byte_index]);
+                else if (pb <= pc) return (byte + up[byte_index]);
+                else return (byte + upperleft[byte_index]);
+            });
+            previousPixel = bytes;
+            content.push(previousPixel);
         });
         return content;
     }
