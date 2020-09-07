@@ -74,7 +74,7 @@ export default class PngImage {
         while (pos < data.length) {
             const line = data.slice(pos, pos + scanlineLength);
             const filter = line[0];
-            const pixelsData = [];
+            const pixelsData: Array<Uint8Array> = [];
 
             let linePos = 1;
             while (linePos < line.length) {
@@ -82,7 +82,16 @@ export default class PngImage {
                 linePos += 4;
             }
 
-            // We will process the line data here
+            switch (filter) {
+                case 0: // None
+                    this.content = this.content.concat(pixelsData);
+                    break;
+                default:
+                    pixelsData.map(() => {
+                        this.content.push(new Uint8Array([0, 0, 0, 255]));
+                    });
+                    break;
+            }
             pos += scanlineLength;
         }
     }
