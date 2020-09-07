@@ -11,6 +11,8 @@ export default class PngImage {
     private filterMethod: number = -1;
     private interlaceMethod: number = -1;
 
+    private idatData: Uint8Array = new Uint8Array();
+
     constructor(bytes: Uint8Array) {
         const magicNumberBytes = bytes.slice(0, 8);
         const magicNumber = Buffer.from(magicNumberBytes).toString("hex");
@@ -24,8 +26,13 @@ export default class PngImage {
                 case "IHDR":
                     this.parseIHDRChunk(chunk);
                     break;
+                case "IDAT":
+                    this.addIDATChunk(chunk);
+                    break;
+                case "IEND":
+                    this.parseIDATData();
+                    break;
             }
-            // We will parse the data here depending on the chunk type
             pos += chunk.totalLength;
         }
     }
@@ -48,5 +55,15 @@ export default class PngImage {
 
         this.interlaceMethod = chunk.data.slice(12, 13)[0];
         if (this.interlaceMethod !== 0) throw new Error("Interlacing not supported");
+    }
+
+    private addIDATChunk(chunk: PngChunk) {
+        const tmp = this.idatData;
+        this.idatData = new Uint8Array(tmp?.length + chunk.data.length);
+        this.idatData.set(tmp);
+        this.idatData.set(chunk.data, tmp.length);
+    }
+
+    private parseIDATData() {
     }
 }
