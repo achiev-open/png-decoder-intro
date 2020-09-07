@@ -86,6 +86,15 @@ export default class PngImage {
                 case 0: // None
                     this.content = this.content.concat(pixelsData);
                     break;
+                case 1: // Sub
+                    this.content = this.content.concat(this.parseSubFilter(pixelsData));
+                    break;
+                case 2: // Up
+                    this.content = this.content.concat(this.parseUpFilter(pixelsData, {
+                        pos,
+                        scanlineLength,
+                    }));
+                    break;
                 default:
                     pixelsData.map(() => {
                         this.content.push(new Uint8Array([0, 0, 0, 255]));
@@ -94,5 +103,39 @@ export default class PngImage {
             }
             pos += scanlineLength;
         }
+    }
+
+    private parseSubFilter(pixelsData: Array<Uint8Array>): Array<Uint8Array> {
+        const content: Array<Uint8Array> = [];
+        let previousArray = new Uint8Array([0, 0, 0, 0]);
+
+        pixelsData.map((pixel: any) => {
+            let newArray: Uint8Array = new Uint8Array([
+                (pixel[0] + previousArray[0]) % 256,
+                (pixel[1] + previousArray[1]) % 256,
+                (pixel[2] + previousArray[2]) % 256,
+                (pixel[3] + previousArray[3]) % 256,
+            ]);
+            previousArray = newArray;
+            content.push(newArray);
+        });
+        return content;
+    }
+
+    private parseUpFilter(pixelsData: Array<Uint8Array>, metadata: any): Array<Uint8Array> {
+        const content: Array<Uint8Array> = [];
+        const previousLinePixels = this.content.slice((metadata.pos / metadata.scanlineLength - 1) * this.width,  (metadata.pos / metadata.scanlineLength - 1) * this.width + this.width);
+
+        pixelsData.map((pixel: any, i: number) => {
+            let previousArray = previousLinePixels[i];
+            let newArray: Uint8Array = new Uint8Array([
+                (pixel[0] + previousArray[0]) % 256,
+                (pixel[1] + previousArray[1]) % 256,
+                (pixel[2] + previousArray[2]) % 256,
+                (pixel[3] + previousArray[3]) % 256,
+            ]);
+            content.push(newArray);
+        });
+        return content;
     }
 }
