@@ -24,6 +24,7 @@
     "copy-webpack-plugin": "^6.1.0",
     "file-loader": "^6.1.0",
     "html-webpack-plugin": "^4.4.1",
+    "pako": "^1.0.11",
     "ts-loader": "^8.0.3",
     "typescript": "^4.0.2",
     "webpack": "^4.44.1",
